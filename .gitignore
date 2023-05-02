@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# IDEs / editors
+.idea/
+.vscode/
+*.pyc
+*.bak
+*.swp
+
+# System
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+downloaded/**
+!downloaded/.keep
+
+key/**
+
+.env
