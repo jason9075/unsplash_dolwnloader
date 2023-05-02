@@ -1,6 +1,7 @@
 import dotenv
 import requests
 import os
+import concurrent.futures
 from tqdm import tqdm
 
 dotenv.load_dotenv()
@@ -32,25 +33,31 @@ def main():
     idx = 0
     page = 1
 
-    while idx < total_photos:
-        response = requests.get(f"{API_GET_LIST_PHOTOS}&page={page}")
-        data = response.json()
-        download_list_photo(data)
-        idx += len(data)
-        page += 1
+    # use multi thread to download, limit 10 threads
+    with tqdm(total=total_photos) as pbar:
+        while idx < total_photos:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                response = requests.get(f"{API_GET_LIST_PHOTOS}&page={page}")
+                data = response.json()
+                download_list_photo(executor, data)
+                # wait complete batch download
+                executor.shutdown(wait=True)
+                idx += len(data)
+                pbar.update(len(data))
+                page += 1
 
 
-def download_list_photo(data):
-    for photo in tqdm(data):
-        download_photo(photo)
+def download_list_photo(executor, data):
+    for photo in data:
+        url = photo["urls"]["raw"]
+        filename = f"downloaded/{photo['id']}.jpg"
+        # check exist file
+        if os.path.exists(filename):
+            return
+        executor.submit(download_photo, url, filename)
 
 
-def download_photo(photo):
-    url = photo["urls"]["raw"]
-    filename = f"downloaded/{photo['id']}.jpg"
-    # check exist file
-    if os.path.exists(filename):
-        return
+def download_photo(url, filename):
     response = requests.get(url)
     with open(filename, "wb") as file:
         file.write(response.content)
